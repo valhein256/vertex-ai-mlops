@@ -1,0 +1,18 @@
+.DS_Store
+
+*__pycache__
+
+*.parquet
+*.avro
+*.json
+*tmp
+**/.ipynb_checkpoints/*
+pipelines/yaml/*
+
+# temp
+*sample
+datasets/tfrec/
+pretrained/Multilingual-MiniLM-L12-H384/
+pretrained/Multilingual-MiniLM-L12-H384_v0/
+vertex-ai-pipelines.ipynb
+vertexai_pipelines/

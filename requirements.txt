@@ -1,0 +1,10 @@
+transformers[sentencepiece]
+datasets
+tqdm
+pandas
+pyarrow
+fastparquet
+pandavro
+avro
+google-cloud-aiplatform
+scikit-learn
