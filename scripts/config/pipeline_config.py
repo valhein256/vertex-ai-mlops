@@ -14,8 +14,10 @@ PIPELINE_NAME = f"{APP_NAME}-pipeline"
 PIPELINE_ROOT = f"{BUCKET}/{APP_NAME}/pipelines"
 GCS_STAGING = f"{BUCKET}/{APP_NAME}/pipelines"
 
-TRAIN_IMAGE_URI = f"gcr.io/{PROJECT_ID}/pytorch_gpu_train_{MODEL_NAME}"
-SERVE_IMAGE_URI = f"gcr.io/{PROJECT_ID}/pytorch_cpu_predict_{MODEL_NAME}"
+# TRAIN_IMAGE_URI = f"gcr.io/{PROJECT_ID}/pytorch_gpu_train_{MODEL_NAME}"
+# SERVE_IMAGE_URI = f"gcr.io/{PROJECT_ID}/pytorch_cpu_predict_{MODEL_NAME}"
+TRAIN_IMAGE_URI = f"{REGION}-docker.pkg.dev/{PROJECT_ID}/{MODEL_NAME}-train-pytorch-gcp"
+SERVE_IMAGE_URI = f"{REGION}-docker.pkg.dev/{PROJECT_ID}/{MODEL_NAME}-torch-serve"
 
 MACHINE_TYPE = "n1-standard-16"
 REPLICA_COUNT = "1"

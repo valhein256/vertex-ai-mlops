@@ -1,4 +1,8 @@
 SERVICE := vertex-ai-mlops
+PROJECT_ID := trend-micro-check-beta
+MLOPS_BUCKET_NAME = gs://mlops-builds
+REGION := us-central1
+APP_NAME := ${SERVICE}
 PYTORCH_JUPYTER_IMAGE := ${SERVICE}-pytorch-jupyter
 
 ##@ Helpers
@@ -63,11 +67,18 @@ mlops-pipelines-preparing: ## mlops-pipelines-preparing
 	@gsutil ls -al ${MLOPS_BUCKET_NAME}
 	@echo "Done !!"
 
+clean-preparing:
+	@echo "Remove all resources of mlops-pipelines in ${MLOPS_BUCKET_NAME}"
+	@gsutil rm -rf ${MLOPS_BUCKET_NAME}/${SERVICE}
+	@echo "Check"
+	@gsutil ls -al ${MLOPS_BUCKET_NAME}
+	@echo "Done !!"
+
 
 ##@ Training
-PROJECT_ID = trend-micro-check-beta
+GCP_PROJECT_ID = ""
 IMAGE_REPO_NAME = pytorch_gpu_train_fbi-sms-mlops
-CUSTOM_TRAIN_IMAGE_URI = gcr.io/$(PROJECT_ID)/$(IMAGE_REPO_NAME)
+CUSTOM_TRAIN_IMAGE_URI = gcr.io/$(GCP_PROJECT_ID)/$(IMAGE_REPO_NAME)
 
 .PHONY: build-pytorch-gpu-training pytorch-gpu-training
 
@@ -112,12 +123,27 @@ tf-jupyter-bash: ## Run /bin/bash in tensorflow:latest-jupyter
 
 ##@ DEPLOY
 
-deploy:
+deploy: ## Deploy / Submit pipeline to vertex ai
 	@docker run -it --rm \
 		-v $(PWD):/home/jovyan/work/${SERVICE} \
 		-v $(HOME)/.config/gcloud:/home/jovyan/.config/gcloud \
 		-w /home/jovyan/work/${SERVICE} \
+		-e PROJECT_ID=${PROJECT_ID} \
+		-e BUCKET=${MLOPS_BUCKET_NAME} \
+		-e REGION=${REGION} \
+		-e APP_NAME=${SERVICE} \
 		${JUPYTER_IMAGE} python3 ./pipelines/pipeline.py
+
+clean-mlops-resources: ## Clean project resources on vertex ai
+	@docker run -it --rm \
+		-v $(PWD):/home/jovyan/work/${SERVICE} \
+		-v $(HOME)/.config/gcloud:/home/jovyan/.config/gcloud \
+		-w /home/jovyan/work/${SERVICE} \
+		-e PROJECT_ID=${PROJECT_ID} \
+		-e BUCKET=${MLOPS_BUCKET_NAME} \
+		-e REGION=${REGION} \
+		-e APP_NAME=${SERVICE} \
+		${JUPYTER_IMAGE} python3 ./scripts/clean.py
 
 ##@ TEST IMAGE BUILDING
 TRAINER_IMAGE = ${SERVICE}-trainer
@@ -125,14 +151,8 @@ SERVE_IMAGE = ${SERVICE}-serve
 
 .PHONY: build-trainer-image build-serve-image
 
-build-trainer-image: ## build trainer image``
+build-trainer-image: ## build trainer image
 	@docker build -f ./trainer/pytorch-trainer.Dockerfile . -t ${TRAINER_IMAGE}
 
 build-serve-image:  ## build serve image
 	@docker build -f ./predictor/pytorch-serve.Dockerfile . -t ${SERVE_IMAGE}
-
-trainer-bash: ## Run trainer container
-	@docker run -it --rm ${TRAINER_IMAGE} /bin/bash
-
-serve-bash: ## Run serve container
-	@docker run -it --rm ${SERVE_IMAGE} /bin/bash
